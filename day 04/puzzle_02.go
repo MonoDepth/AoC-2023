@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 )
 
 func solve_02() {
@@ -12,14 +13,19 @@ func solve_02() {
 
 	lines := strings.Split(string(content), "\r\n")
 	winningEntryMap := extractWinningNumbers(lines)
-
 	sum := 0
+	var wg sync.WaitGroup
 
-	// Recursively sum up the winnings for each entry
+	// Recursively sum up the winnings for each entry	in parallel
+	// Who needs stack memory anyways
 	for entryNo, entryCount := range winningEntryMap {
-		sum += recursiveSum(entryNo, entryCount, &winningEntryMap)
+		wg.Add(1)
+		go func(entryNo, entryCount int) {
+			defer wg.Done()
+			sum += recursiveSum(entryNo, entryCount, &winningEntryMap)
+		}(entryNo, entryCount)
 	}
-
+	wg.Wait()
 	fmt.Println(sum)
 }
 
@@ -33,7 +39,6 @@ func recursiveSum(entryNo, entryCount int, winningEntryMap *[]int) int {
 	for idx := entryNo; idx < entryNo+entryCount; idx++ {
 		sum += recursiveSum(idx+1, (*winningEntryMap)[idx+1], winningEntryMap)
 	}
-
 	return sum
 }
 
